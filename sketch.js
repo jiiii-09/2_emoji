@@ -288,21 +288,31 @@ function drawSVGWaveform(waveform, points) {
   strokeWeight(5);
   noFill();
 
-  let avgAmp = waveform.reduce((acc, val) => acc + abs(val), 0) / waveform.length;
-  let distortion = map(avgAmp, 0, 1, 20, 150);  // 그대로 유지
+  let ampBoost = 10;    // 🔥 진폭 크게 (기본값: 1)
+  let waveSpeed = 0.1;  // 🔥 흔들림 속도
+  let freq = 0.25;      // 🔥 좌우 흔들리는 형태의 주기
+  let distortBase = 80; // 🔥 전체 흔들림 크기
+  let distortMax = 250; // 🔥 목소리 크면 최대 250까지 흔들림
 
   beginShape();
   for (let i = 0; i < points.length; i++) {
-    let wIndex = floor(map(i, 0, points.length, 0, waveform.length));
-    let amp = waveform[wIndex];
 
-    let x = points[i].x + sin(i * 0.1 + frameCount * 0.05) * amp * distortion;
-    let y = points[i].y + cos(i * 0.1 + frameCount * 0.05) * amp * distortion;
+    // waveform의 특정 위치 샘플링
+    let wIndex = floor(map(i, 0, points.length, 0, waveform.length));
+    let amp = waveform[wIndex] * ampBoost;   // 🔥 Boosting
+
+    // 진폭이 클수록 distortion 크게
+    let localDistort = distortBase + abs(amp) * distortMax;
+
+    // 좌우 흔들림 + 상하 흔들림
+    let x = points[i].x + sin(i * freq + frameCount * waveSpeed) * localDistort * amp;
+    let y = points[i].y + cos(i * freq + frameCount * waveSpeed) * localDistort * amp;
 
     vertex(x, y);
   }
   endShape();
 }
+
 
 
 
