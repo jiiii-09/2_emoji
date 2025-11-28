@@ -288,19 +288,35 @@ function drawSVGWaveform(waveform, points) {
   strokeWeight(5);
   noFill();
 
-  let avgAmp = waveform.reduce((acc, val) => acc + abs(val), 0) / waveform.length;
-  let distortion = map(avgAmp, 0, 1, 20, 150);
+  // 1) 전체 진폭 (기본 진폭 3배 증가)
+  let avgAmp = waveform.reduce((a, b) => a + abs(b), 0) / waveform.length;
+  let targetAmp = map(avgAmp, 0, 1, 8, 60);  // ← 3배 키워줌
+
+  // 2) smoothing 약하게 (부드럽지만 너무 느리지 않게)
+  if (typeof smoothAmp === "undefined") smoothAmp = 0;
+  smoothAmp = lerp(smoothAmp, targetAmp, 0.15);  // ← 0.05 → 0.15
+
+  // 3) 물결 움직임 속도/주기 강화
+  let speed = 0.05;    // ← 0.02 → 0.05 (2.5배 빠름)
+  let waveFreq = 3.5;  // ← 2.0 → 3.5 (물결 더 촘촘)
 
   beginShape();
   for (let i = 0; i < points.length; i++) {
-    let wIndex = floor(map(i, 0, points.length, 0, waveform.length));
-    let amp = waveform[wIndex];
-    let x = points[i].x + sin(i * 0.1 + frameCount * 0.05) * amp * distortion * 0.5;
-    let y = points[i].y + cos(i * 0.1 + frameCount * 0.05) * amp * distortion;
+    let t = i / points.length;
+
+    // 4) 물결 오프셋 계산
+    let waveOffset =
+      sin(t * TWO_PI * waveFreq + frameCount * speed) * smoothAmp;
+
+    // 5) x 변경 없음, y만 물결 적용
+    let x = points[i].x;
+    let y = points[i].y + waveOffset;
+
     vertex(x, y);
   }
   endShape();
 }
+
 // --- 개선된 SVG Path -> 점 배열 변환 (바운딩박스 기반으로 자동 스케일/센터링 + 조정 가능) ---
 function parseSVGPath(svgPath) {
   let points = [];
