@@ -216,22 +216,27 @@ function setup() {
   centerY = height / 2;
 
   mic = new p5.AudioIn();
-  mic.start();
+  mic.start(() => {
+    mic.amp(2.0);        // 🔥 파형 부스트
+    getAudioContext().resume(); // 🔥 FFT 깨우기
+  });
 
-  fft = new p5.FFT();
+  fft = new p5.FFT(0, 2048);  // 🔥 고해상도 + smoothing 0
   fft.setInput(mic);
+  fft.smooth(0); // smoothing 완전 제거
 
-  preloadSVGs();   // 미리 SVG 점데이터 만들기
+  preloadSVGs();
   startRecognition();
   textAlign(CENTER, CENTER);
 }
 
 
 
+
 function draw() {
   drawGradientBackground();  // 🌈 여기가 새로운 배경!
 
-  waveformVals = getSmoothWaveform();
+  waveformVals = fft.waveform(); 
   if (!waveformVals) return;
 
   if (triggerActive && millis() - triggerTime < 3000) {
