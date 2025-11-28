@@ -290,14 +290,14 @@ function drawSVGWaveform(waveform, points) {
 
   // 1) 전체 진폭 (기본 진폭 3배 증가)
   let avgAmp = waveform.reduce((a, b) => a + abs(b), 0) / waveform.length;
-  let targetAmp = map(avgAmp, 0, 1, 8, 60);  // ← 3배 키워줌
+  let targetAmp = map(avgAmp, 0, 1, 10, 100);  // ← 3배 키워줌
 
   // 2) smoothing 약하게 (부드럽지만 너무 느리지 않게)
   if (typeof smoothAmp === "undefined") smoothAmp = 0;
-  smoothAmp = lerp(smoothAmp, targetAmp, 0.15);  // ← 0.05 → 0.15
+  smoothAmp = lerp(smoothAmp, targetAmp, 0.5);  // ← 0.05 → 0.15
 
   // 3) 물결 움직임 속도/주기 강화
-  let speed = 0.05;    // ← 0.02 → 0.05 (2.5배 빠름)
+  let speed = 0.1;    // ← 0.02 → 0.05 (2.5배 빠름)
   let waveFreq = 3.5;  // ← 2.0 → 3.5 (물결 더 촘촘)
 
   beginShape();
