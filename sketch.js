@@ -288,34 +288,38 @@ function drawSVGWaveform(waveform, points) {
   strokeWeight(5);
   noFill();
 
-  // 1) 전체 진폭 (기본 진폭 3배 증가)
+  // 1) GitHub Pages 환경에서는 avgAmp 값이 매우 작음 → 크게 증폭
   let avgAmp = waveform.reduce((a, b) => a + abs(b), 0) / waveform.length;
-  let targetAmp = map(avgAmp, 0, 1, 10, 100);  // ← 3배 키워줌
 
-  // 2) smoothing 약하게 (부드럽지만 너무 느리지 않게)
+  // 기본 진폭을 훨씬 크게 (GitHub에서 실제 보이는 수준으로)
+  let rawAmp = avgAmp * 500;   // ← GitHub Pages 전용 핵심 포인트!
+
+  // 2) smoothing (너무 부드러워서 멈춘 것처럼 보이지 않게)
   if (typeof smoothAmp === "undefined") smoothAmp = 0;
-  smoothAmp = lerp(smoothAmp, targetAmp, 0.5);  // ← 0.05 → 0.15
+  smoothAmp = lerp(smoothAmp, rawAmp, 0.25);  // 0.15 → 0.25
 
-  // 3) 물결 움직임 속도/주기 강화
-  let speed = 0.1;    // ← 0.02 → 0.05 (2.5배 빠름)
-  let waveFreq = 3.5;  // ← 2.0 → 3.5 (물결 더 촘촘)
+  // 3) ➕ 최소 움직임값을 강제 (완전히 0이 되지 않게)
+  let amp = max(smoothAmp, 4); // 최소 움직임 4px 보장!
+
+  // 4) 물결 애니메이션 속도 & 주파수
+  let speed = 0.1;   // 더 빠르게
+  let freq = 4;      // 촘촘한 파형
 
   beginShape();
   for (let i = 0; i < points.length; i++) {
     let t = i / points.length;
 
-    // 4) 물결 오프셋 계산
-    let waveOffset =
-      sin(t * TWO_PI * waveFreq + frameCount * speed) * smoothAmp;
+    let wave =
+      sin(t * TWO_PI * freq + frameCount * speed) * amp;
 
-    // 5) x 변경 없음, y만 물결 적용
     let x = points[i].x;
-    let y = points[i].y + waveOffset;
+    let y = points[i].y + wave;
 
     vertex(x, y);
   }
   endShape();
 }
+
 
 // --- 개선된 SVG Path -> 점 배열 변환 (바운딩박스 기반으로 자동 스케일/센터링 + 조정 가능) ---
 function parseSVGPath(svgPath) {
