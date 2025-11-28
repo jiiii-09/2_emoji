@@ -288,28 +288,19 @@ function drawSVGWaveform(waveform, points) {
   strokeWeight(5);
   noFill();
 
-  // FFT waveform 그대로 반영
-  let strength = 120;  // 자연스러운 튐이 보이는 정도 (과장 아님)
+  let avgAmp = waveform.reduce((acc, val) => acc + abs(val), 0) / waveform.length;
+  let distortion = map(avgAmp, 0, 1, 20, 150);
 
   beginShape();
   for (let i = 0; i < points.length; i++) {
-
     let wIndex = floor(map(i, 0, points.length, 0, waveform.length));
     let amp = waveform[wIndex];
-
-    // FFT의 원본 움직임만 반영 (진짜 안정화 없음)
-    let x = points[i].x;
-    let y = points[i].y + amp * strength;
-
+    let x = points[i].x + sin(i * 0.1 + frameCount * 0.05) * amp * distortion * 0.5;
+    let y = points[i].y + cos(i * 0.1 + frameCount * 0.05) * amp * distortion;
     vertex(x, y);
   }
   endShape();
 }
-
-
-
-
-
 // --- 개선된 SVG Path -> 점 배열 변환 (바운딩박스 기반으로 자동 스케일/센터링 + 조정 가능) ---
 function parseSVGPath(svgPath) {
   let points = [];
@@ -407,11 +398,27 @@ for (let p of points) {
 
 
 // --- waveform smoothing ---
-// --- waveform smoothing 제거 ---
 function getSmoothWaveform() {
-  return fft.waveform();  // smoothing 없음!
-}
+  let waveform = fft.waveform();
+  if (!waveform) return null;
 
+  let smoothed = [];
+  let buffer = 30; // 기존 10 → 30으로 강화 (훨씬 부드러움)
+
+  for (let i = 0; i < waveform.length; i++) {
+    let sum = 0;
+    let count = 0;
+    for (let j = -buffer; j <= buffer; j++) {
+      let idx = i + j;
+      if (idx >= 0 && idx < waveform.length) {
+        sum += waveform[idx];
+        count++;
+      }
+    }
+    smoothed.push(sum / count);
+  }
+  return smoothed;
+}
 
 
 // --- Web Speech API로 '사랑' 감지 ---
