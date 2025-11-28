@@ -288,30 +288,24 @@ function drawSVGWaveform(waveform, points) {
   strokeWeight(5);
   noFill();
 
-  let ampBoost = 10;    // 🔥 진폭 크게 (기본값: 1)
-  let waveSpeed = 0.1;  // 🔥 흔들림 속도
-  let freq = 0.25;      // 🔥 좌우 흔들리는 형태의 주기
-  let distortBase = 80; // 🔥 전체 흔들림 크기
-  let distortMax = 250; // 🔥 목소리 크면 최대 250까지 흔들림
+  // FFT waveform 그대로 반영
+  let strength = 120;  // 자연스러운 튐이 보이는 정도 (과장 아님)
 
   beginShape();
   for (let i = 0; i < points.length; i++) {
 
-    // waveform의 특정 위치 샘플링
     let wIndex = floor(map(i, 0, points.length, 0, waveform.length));
-    let amp = waveform[wIndex] * ampBoost;   // 🔥 Boosting
+    let amp = waveform[wIndex];
 
-    // 진폭이 클수록 distortion 크게
-    let localDistort = distortBase + abs(amp) * distortMax;
-
-    // 좌우 흔들림 + 상하 흔들림
-    let x = points[i].x + sin(i * freq + frameCount * waveSpeed) * localDistort * amp;
-    let y = points[i].y + cos(i * freq + frameCount * waveSpeed) * localDistort * amp;
+    // FFT의 원본 움직임만 반영 (진짜 안정화 없음)
+    let x = points[i].x;
+    let y = points[i].y + amp * strength;
 
     vertex(x, y);
   }
   endShape();
 }
+
 
 
 
