@@ -288,37 +288,22 @@ function drawSVGWaveform(waveform, points) {
   strokeWeight(5);
   noFill();
 
-  // 1) GitHub Pages 환경에서는 avgAmp 값이 매우 작음 → 크게 증폭
-  let avgAmp = waveform.reduce((a, b) => a + abs(b), 0) / waveform.length;
-
-  // 기본 진폭을 훨씬 크게 (GitHub에서 실제 보이는 수준으로)
-  let rawAmp = avgAmp * 500;   // ← GitHub Pages 전용 핵심 포인트!
-
-  // 2) smoothing (너무 부드러워서 멈춘 것처럼 보이지 않게)
-  if (typeof smoothAmp === "undefined") smoothAmp = 0;
-  smoothAmp = lerp(smoothAmp, rawAmp, 0.25);  // 0.15 → 0.25
-
-  // 3) ➕ 최소 움직임값을 강제 (완전히 0이 되지 않게)
-  let amp = max(smoothAmp, 4); // 최소 움직임 4px 보장!
-
-  // 4) 물결 애니메이션 속도 & 주파수
-  let speed = 0.1;   // 더 빠르게
-  let freq = 4;      // 촘촘한 파형
+  let avgAmp = waveform.reduce((acc, val) => acc + abs(val), 0) / waveform.length;
+  let distortion = map(avgAmp, 0, 1, 20, 150);  // 그대로 유지
 
   beginShape();
   for (let i = 0; i < points.length; i++) {
-    let t = i / points.length;
+    let wIndex = floor(map(i, 0, points.length, 0, waveform.length));
+    let amp = waveform[wIndex];
 
-    let wave =
-      sin(t * TWO_PI * freq + frameCount * speed) * amp;
-
-    let x = points[i].x;
-    let y = points[i].y + wave;
+    let x = points[i].x + sin(i * 0.1 + frameCount * 0.05) * amp * distortion;
+    let y = points[i].y + cos(i * 0.1 + frameCount * 0.05) * amp * distortion;
 
     vertex(x, y);
   }
   endShape();
 }
+
 
 
 // --- 개선된 SVG Path -> 점 배열 변환 (바운딩박스 기반으로 자동 스케일/센터링 + 조정 가능) ---
@@ -418,27 +403,11 @@ for (let p of points) {
 
 
 // --- waveform smoothing ---
+// --- waveform smoothing 제거 ---
 function getSmoothWaveform() {
-  let waveform = fft.waveform();
-  if (!waveform) return null;
-
-  let smoothed = [];
-  let buffer = 30; // 기존 10 → 30으로 강화 (훨씬 부드러움)
-
-  for (let i = 0; i < waveform.length; i++) {
-    let sum = 0;
-    let count = 0;
-    for (let j = -buffer; j <= buffer; j++) {
-      let idx = i + j;
-      if (idx >= 0 && idx < waveform.length) {
-        sum += waveform[idx];
-        count++;
-      }
-    }
-    smoothed.push(sum / count);
-  }
-  return smoothed;
+  return fft.waveform();  // smoothing 없음!
 }
+
 
 
 // --- Web Speech API로 '사랑' 감지 ---
